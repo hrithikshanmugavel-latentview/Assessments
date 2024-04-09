@@ -1,0 +1,99 @@
+Lab 1:
+
+Question 1:
+
+select * from customerinteractions
+where month = 'March' and year = 2024 group by customerID
+having DataUsed >(select avg(DataUsed) from customerinteractions where month = 'March' and year = 2024);
+
+Question 2:
+
+select CustomerID, callDuration from customerinteractions
+where month = 'March' and year = 2024
+group by customerID 
+having callDuration > (select callDuration from customerinteractions where month = 'Febraury' and year = 2024);
+
+
+Question 3:
+
+select CustomerID, MessageCount, DataUsed from customerinteractions
+where month = 'March' and year = 2024
+group by customerID 
+having MessageCount < (select MessageCount from customerinteractions where month = 'Febraury' and year = 2024) and 
+DataUsed > (select MessageCount from customerinteractions where month = 'Febraury' and year = 2024) ;
+
+
+Lab 2: 
+
+Question 4:
+
+select ProductTypeID, group_concat(Quarter) as Quarters, Year,
+sum(TotalSalesAmount) as Total_Sales, sum(UnitsSold) as Total_Units_Sold 
+from quarterlysales 
+where ProductTypeID = 1
+group by ProductTypeID, year;
+
+Question 5:
+
+select ProductTypeID, sum(TotalSalesAmount) as Total_Sales, sum(UnitsSold) as Total_Units_Sold 
+from quarterlysales 
+where Quarter = 'Q1' and year = 2024
+group by ProductTypeID
+having total_sales = (Select max(total) from 
+(select sum(TotalSalesAmount) as total from quarterlysales 
+where Quarter = 'Q1' and year = 2024 group by ProductTypeID) as t1);
+
+Question 6:
+
+select ProductTypeID, AVG(UnitsSold) as Average_Price_Per_Unit_Sold from quarterlysales 
+where ProductTypeID = 1 and Quarter = 'Q1' and year = 2024
+group by ProductTypeID;
+
+
+Lab 3:
+
+Question 7:
+
+select region from sectorenergyconsumption
+where month = 'March' and Year = 2024 and ConsumptionKWh > 
+(select AVG(ConsumptionKWh) from sectorenergyconsumption where month = 'March' and Year = 2024);
+
+Question 8:
+
+select sector, ConsumptionKWh from sectorenergyconsumption
+where month = 'March' and year = 2024
+group by sector, ConsumptionKWh
+having ConsumptionKWh < (select ConsumptionKWh from sectorenergyconsumption where month = 'Febraury' and year = 2024);
+
+Question 9:
+
+select EnergySource, sum(ConsumptionKWh) from sectorenergyconsumption
+where month = 'February'
+group by EnergySource;
+
+
+Lab 4:
+
+Question 10:
+
+select * from insuranceactivities
+where FeedbackScore > (select AVG(feedbackScore) from insuranceactivities)
+and Investigation = 'No';
+
+Question 11:
+
+select policyType, sum(AnnualPremium) from insuranceactivities
+where ClaimsCount>1 and FeedbackScore > (select AVG(feedbackScore) from insuranceactivities)
+group by PolicyType;
+
+Question 12:
+
+select policyType, avg(FeedbackScore) as Average_Feedback_Score, 
+group_concat(ClaimsCount) as Claim_Status 
+from insuranceactivities
+group by policyType;
+
+
+
+
+
