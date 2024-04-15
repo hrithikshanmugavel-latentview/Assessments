@@ -1,0 +1,205 @@
+-- LAB 1:
+
+-- Qn 1:
+
+select p.product_category, p.product_id, s.sales_date, AVG(s.sales_amount) as average_sales_in_last_month
+from customers c
+inner join sales_records s on c.customer_id = s.customer_id
+inner join products p on p.product_id = s.product_id
+where sales_date >= date_sub(curdate(), interval 30 day)
+group by p.product_category, p.product_id, s.sales_date
+order by p.product_category;
+
+-- Qn 2:
+
+with sales_data as 
+(select p.product_id, sum(s.sales_amount) as total_sales
+from customers c
+inner join sales_records s on c.customer_id = s.customer_id
+inner join products p on p.product_id = s.product_id
+where datediff(curdate(), s.sales_date) <= 365
+group by p.product_id)
+
+select product_id, total_sales, RANK() OVER(ORDER BY total_sales desc) as rank_based_on_revenue
+from sales_data limit 3;
+
+-- Qn 3:
+
+with sales_data as 
+(select c.customer_id, c.customer_name, sum(s.sales_amount) as total_sales
+from customers c
+inner join sales_records s on c.customer_id = s.customer_id
+inner join products p on p.product_id = s.product_id
+group by c.customer_id, c.customer_name),
+
+total_sales_data as
+(select sum(sales_amount) as total_amount from sales_records)
+
+select sales_data.customer_id, sales_data.customer_name, sales_data.total_sales, 
+round((sales_data.total_sales/total_sales_data.total_amount)*100, 2) as percentage_contribution,
+RANK() OVER(ORDER BY total_sales desc) as rank_based_on_revenue
+from sales_data, total_sales_data;
+
+-- Qn 4:
+
+with sales_data as(
+select c.customer_id, c.customer_name, count(sales_date) as frequency_of_visit
+from customers c
+inner join sales_records s on c.customer_id = s.customer_id
+inner join products p on p.product_id = s.product_id
+where s.sales_date >= date_sub(curdate(), interval 6 month)
+group by c.customer_id, c.customer_name)
+
+select customer_id, customer_name, 
+case when frequency_of_visit >= 4 then 'Consistent Buyers'
+     else 'Occational Buyers'
+     end as Buyer_Type
+from sales_data;     
+
+
+-- LAB 2:
+
+-- Qn 5:
+
+select f.departure_airport, f.arrival_airport, avg(t.ticket_price) as average_ticket_price
+from flights f
+inner join tickets t on f.flight_id = t.flight_id
+group by f.departure_airport, f.arrival_airport;
+
+-- Qn 6:
+
+select f.flight_number, f.departure_date, count(t.ticket_id) as total_tickets_sold
+from flights f
+inner join tickets t on f.flight_id = t.flight_id
+where t.ticket_date >= date_sub(curdate(), interval 30 day)
+group by f.flight_number, f.departure_date
+order by total_tickets_sold desc;
+
+-- Qn 7:
+
+select p.passenger_id, p.passenger_name, p.frequent_flyer_status, 
+sum(t.ticket_price) as amount_spent_on_tickets
+from passengers p inner join tickets t
+on p.passenger_id = t.passenger_id
+group by p.passenger_id, p.passenger_name, p.frequent_flyer_status
+order by amount_spent_on_tickets desc limit 5;
+
+-- Qn 8:
+
+select monthname(ticket_date) as Month, count(ticket_id) as No_of_tickets_sold
+from tickets
+group by Month
+order by No_of_tickets_sold desc limit 1;
+
+
+-- LAB 3:
+
+-- Qn 9:
+
+select game_id, player_id, avg(minute(play_date)) as average_play_time 
+from playerscores
+group by player_id, game_id;
+
+
+-- Qn 10:
+
+select g.game_id, g.game_name, g.game_genre, count(distinct ps.player_id) as total_number_of_players
+from games g join playerscores ps 
+on g.game_id = ps.game_id
+group by g.game_id, g.game_name, g.game_genre
+order by total_number_of_players desc limit 3;
+
+-- Qn 11:
+
+select g.game_id, g.game_name, g.game_genre, 
+count(distinct ps.player_id) as total_number_of_players, 
+avg(ps.score) as average_score,
+max(ps.score) as highest_score 
+from games g join playerscores ps 
+on g.game_id = ps.game_id
+group by g.game_id, g.game_name, g.game_genre
+order by total_number_of_players desc;
+
+-- Qn 12:
+
+with last_played as (
+select player_id, max(play_date) as last_played_date from playerscores group by player_id)
+
+select distinct p.player_id, p.player_name, p.player_email, p.registration_date, l.last_played_date
+from players p join last_played l on l.player_id = p.player_id
+where l.last_played_date <= date_sub(curdate(), interval 30 day);
+
+
+-- LAB 4:
+
+-- Qn 13:
+
+select d.doctor_id, d.doctor_name, sum(t.cost) as total_cost
+from doctors d inner join treatments t 
+on d.doctor_id = t.doctor_id
+group by d.doctor_id, d.doctor_name
+order by total_cost desc limit 5;
+
+-- Qn 14:
+
+with t as (
+select treatment_id, treatment_name, sum(cost) as total_revenue_per_treatment 
+from treatments
+group by treatment_id, treatment_name
+order by total_revenue_per_treatment desc),
+
+total_revenue as 
+(select sum(cost) as total_revenue_amount from treatments)
+
+select t.treatment_id, t.treatment_name, t.total_revenue_per_treatment, 
+(total_revenue_per_treatment/total_revenue_amount)* 100 as percentage_of_total_revenue
+from t, total_revenue;
+
+-- Qn 15:
+
+select p.patient_id, p.patient_name, p.admission_date, p.discharge_date
+from patients p
+where p.discharge_date >= date_sub(curdate(), interval 30 day);
+
+-- Qn 16:
+
+select gender, diagnosis, 
+round(avg(discharge_date - admission_date)) as Length_of_stay
+from patients
+group by gender, diagnosis
+order by Length_of_stay desc;
+
+
+-- LAB 5:
+
+-- Qn 17:
+
+select c.department, e.semester, avg(e.grade) as Average_grade
+from courses c join enrollments e on c.course_id = e.course_id
+group by c.department, e.semester
+order by c.department, e.semester;
+
+-- Qn 18:
+
+select s.major, s.enrollment_year, count(s.student_id) as total_no_of_students
+from students s
+group by s.major, s.enrollment_year
+order by total_no_of_students desc limit 5;
+
+-- Qn 19:
+
+select s.student_id, s.student_name, e.semester, sum(c.credits) as total_credits
+from courses c inner join enrollments e
+on c.course_id = e.course_id
+inner join students s on s.student_id = e.student_id 
+group by s.student_id, s.student_name, e.semester
+having total_credits>50;
+
+-- Qn 20:
+
+select c.course_name, s.enrollment_year, count(s.student_id) as no_of_students
+from courses c inner join enrollments e
+on c.course_id = e.course_id
+inner join students s on s.student_id = e.student_id 
+group by c.course_name, s.enrollment_year
+order by no_of_students desc limit 3;
